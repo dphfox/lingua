@@ -1,6 +1,6 @@
-use std::{collections::HashMap, mem::ManuallyDrop, cell::RefCell};
+use std::{cell::RefCell, collections::HashMap, ffi::CString, mem::ManuallyDrop};
 
-struct StringAllocs {
+pub struct StringAllocs {
 	ptr_map: HashMap<*mut u8, ManuallyDrop<String>>
 }
 
@@ -48,11 +48,10 @@ impl StringAllocs {
 }
 
 thread_local! {
-    static FOREIGN_STRING_ALLOCS: RefCell<StringAllocs> = RefCell::new(StringAllocs::new());
+    pub static FOREIGN_STRING_ALLOCS: RefCell<StringAllocs> = RefCell::new(StringAllocs::new());
 }
 
-#[no_mangle]
-pub extern "C" fn lingua_alloc_string(
+pub fn alloc_string(
 	capacity: usize
 ) -> *mut u8 {
 	FOREIGN_STRING_ALLOCS.with_borrow_mut(|allocs| {
@@ -60,11 +59,34 @@ pub extern "C" fn lingua_alloc_string(
 	})
 }
 
+pub fn dealloc_string(
+	ptr: *mut u8
+) -> bool {
+	FOREIGN_STRING_ALLOCS.with_borrow_mut(|allocs| {
+		allocs.dealloc(ptr)
+	})
+}
+
+
 #[no_mangle]
-pub extern "C" fn lingua_dealloc_string(
+extern "C" fn lingua_alloc_foreign_string(
+	capacity: usize
+) -> *mut u8 {
+	alloc_string(capacity)
+}
+
+#[no_mangle]
+extern "C" fn lingua_dealloc_foreign_string(
 	ptr: *mut u8
 ) -> u8 {
-	FOREIGN_STRING_ALLOCS.with_borrow_mut(|allocs| {
-		allocs.dealloc(ptr) as u8
-	})
+	dealloc_string(ptr) as u8
+}
+
+#[no_mangle]
+extern "C" fn lingua_dealloc_received_string(
+	ptr: *mut u8
+) -> () {
+	unsafe {
+		drop(CString::from_raw(ptr as *mut i8));
+	}
 }
