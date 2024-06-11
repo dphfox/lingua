@@ -1,3 +1,5 @@
+<img align="right" src="./gh-assets/lingua.svg" alt="Lingua logo">
+
 # lingua
 Send complex data between Rust and Roblox Luau via Wasynth using JSON.
 
