@@ -7,7 +7,7 @@ The Rust ecosystem contains a lot of valuable tooling for Luau developers. Howev
 
 Wasynth provides an exciting opportunity to bridge that gap, allowing basic WASM to run completely under Luau for the first time. However, it's pretty low level, meaning developers have to implement bespoke strategies for communicating across the WASM boundary. Generating bindings could help here, but a more immediate, compatible, and technologically straightforward solution is desirable.
 
-That's where Lingua comes in. Leveraging the Rust's serde-json crate and Roblox's JSON encoding methods, Lingua allows Rust and Luau code to freely communicate complex structured data without setting up dedicated bindings or complex binary formats.
+That's where Lingua comes in. Leveraging Rust's serde-json crate and Roblox's JSON encoding methods, Lingua allows Rust and Luau code to freely communicate complex structured data without setting up dedicated bindings or complex binary formats.
 
 Lingua provides friendly APIs on both the Rust and Luau side so that end users don't have to worry about memory management or other implementation details
 
