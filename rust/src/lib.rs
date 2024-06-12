@@ -1,4 +1,16 @@
-#![cfg(target_arch = "wasm32")]
+// Previously, this was a crate-wide conditional compile that'd simply not
+// export any of lingua's members. However, this was extremely confusing for
+// projects that weren't properly configured to target WebAssembly, because it'd
+// look like the import was supposed to work. To avoid confusion, a compile time
+// error is now thrown. Users can still explicitly declare that they want to
+// compile for other targets without Lingua, but the default is now to notify
+// users of the configuration error, with the expectation being that most people
+// are only compiling for WebAssembly.
+#[cfg(not(target = "wasm32"))]
+compile_error!(
+	"Lingua only works with WebAssembly targets. \
+	Either configure your project's target triple, \
+	or conditionally depend on Lingua.");
 
 use std::{cell::RefCell, collections::HashMap, num::Wrapping, panic::{catch_unwind, AssertUnwindSafe, UnwindSafe}};
 
