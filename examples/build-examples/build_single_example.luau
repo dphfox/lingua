@@ -113,30 +113,6 @@ local function build_single_example(
 		print(`{RED}[Build Example > Rojo]{RESET} Rojo build successful!`)
 	end
 
-	-- Build Rojo sourcemaps
-	do
-		print(`{RED}[Build Example > Rojo]{RESET} Emitting Rojo sourcemaps...`)
-		local result = process.spawn(
-			"rojo",
-			{
-				"sourcemap",
-				"example.project.json",
-				"--output",
-				"sourcemap.json"
-			},
-			{
-				cwd = working_dir
-			}
-		)
-		if not result.ok then
-			print(result.stdout)
-			print(result.stderr)
-			print(`{RED}[Build Example > Rojo]{RESET} Rojo sourcemaps failed!`)
-			return
-		end
-		print(`{RED}[Build Example > Rojo]{RESET} Rojo sourcemaps successful!`)
-	end
-
 	print(`{YELLOW}[Build Example]{RESET} Build finished!`)
 	print(`{YELLOW}[Build Example]{RESET} The example project has been set up inside {BLUE}target-luau/build.rbxl{RESET} for you.`)
 	print(`{YELLOW}[Build Example]{RESET} You can continuously serve this example by running {BLUE}rojo serve example.project.json{RESET}.`)
