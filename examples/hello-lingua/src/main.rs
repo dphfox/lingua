@@ -1,6 +1,9 @@
+#[cfg(not(target = "wasm32"))]
+compile_error!("This project must target WebAssembly to compile correctly.");
+
 use serde::{Serialize, Deserialize};
 
-use lingua_luau;
+use lingua;
 
 #[derive(Serialize, Deserialize)]
 struct LuauGreeting {
@@ -36,7 +39,7 @@ fn main() {
 	
 	let luau_greeting: LuauGreeting = {
 		let handle = unsafe { ask_luau_to_say_hello() }.into();
-		lingua_luau::receive_from_luau(handle).unwrap()
+		lingua::receive_from_luau(handle).unwrap()
 	};
 
 	let rust_greeting = RustGreeting {
@@ -45,7 +48,7 @@ fn main() {
 	};
 
 	{
-		let handle = lingua_luau::send_to_luau(rust_greeting).unwrap();
+		let handle = lingua::send_to_luau(rust_greeting).unwrap();
 		unsafe { respond_to_luau_greeting(handle.into()) };
 	}
 }
