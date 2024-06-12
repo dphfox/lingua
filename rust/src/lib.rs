@@ -6,7 +6,7 @@
 // compile for other targets without Lingua, but the default is now to notify
 // users of the configuration error, with the expectation being that most people
 // are only compiling for WebAssembly.
-#[cfg(not(target = "wasm32"))]
+#[cfg(not(target_arch = "wasm32"))]
 compile_error!(
 	"Lingua only works with WebAssembly targets. \
 	Either configure your project's target triple, \
