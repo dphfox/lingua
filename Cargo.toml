@@ -1,3 +1,6 @@
 [workspace]
-members = ["rust", "examples/*"]
+members = [
+	"rust", 
+	"examples/hello-lingua"
+]
 resolver = "2"
