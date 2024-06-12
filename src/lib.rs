@@ -1,6 +1,6 @@
 use std::{cell::RefCell, collections::HashMap, num::Wrapping, panic::{catch_unwind, AssertUnwindSafe, UnwindSafe}};
 
-use serde::Serialize;
+use serde::{de::DeserializeOwned, Serialize};
 use thiserror::Error;
 
 /// The return values of Lingua FFI functions are used to indicate whether the
@@ -20,6 +20,18 @@ mod return_codes {
 		/// module that was sending the data.
 		LuauApiNotReady = 2
 	}
+	impl Luau {
+		pub fn interpret(
+			value: u8
+		) -> Option<Self> {
+			match value {
+				0 => Some(Luau::Success),
+				1 => Some(Luau::UncaughtErrorAtFfiBoundary),
+				2 => Some(Luau::LuauApiNotReady),
+				_ => None
+			}
+		}
+	}
 	
 	#[repr(u8)]
 	pub enum Rust {
@@ -33,15 +45,6 @@ mod return_codes {
 enum JustReceivedJson {
 	AllocatedOnly(String),
 	Ready(String)
-}
-
-impl JustReceivedJson {
-	pub fn ready(self) -> Self {
-		match self {
-			Self::AllocatedOnly(str) => Self::Ready(str),
-			x => x
-		}
-	}
 }
 
 /// The internal state used by Lingua's Rust-side API.
@@ -79,20 +82,31 @@ fn ffi_panic_boundary<Func: FnOnce() -> () + UnwindSafe>(
 	match catch_unwind(f) {
 		Ok(()) => return_codes::Rust::Success,
 		Err(e) => {
-			log::error!("[lingua] panic at ffi boundary: {e:?}");
+			log::error!("[lingua] panic at ffi boundary\n\ncaused by:\n{e:?}");
 			return_codes::Rust::PanicAtFfiBoundary
 		}
 	}
 }
 
 extern "C" {
+	/// The Rust side calls this function when it sends a JSON string. It's
+	/// called with the handle that it generated, the pointer to the string, and
+	/// the length of that string. To minimise the chance of errors at the FFI
+	/// boundary, the string is saved without decoding the data or invoking any
+	/// user callbacks.
+	#[must_use]
 	fn lingua_send_json_to_luau(
 		rust_handle: u32,
 		ptr: *mut u8,
 		len: u32
-	) -> ();
+	) -> u8;
 }
 
+/// The Luau side calls this function to initiate sending a JSON string. It's
+/// called with the handle that it generated and the length of the string that
+/// it would like to transfer. The Rust side is expected to reserve space for
+/// the string and return a pointer to this reserved space, with a null pointer
+/// representing a failure to allocate space.
 #[no_mangle]
 extern "C" fn lingua_send_json_to_rust_alloc(
 	luau_handle: u32,
@@ -125,6 +139,9 @@ extern "C" fn lingua_send_json_to_rust_alloc(
 	return_ptr
 }
 
+/// The Luau side is expected to call this function once it has finished writing
+/// to space previously allocated for the transfer of JSON data. This signals to
+/// the Rust side that it is safe to access the data.
 #[no_mangle]
 extern "C" fn lingua_send_json_to_rust(
 	luau_handle: u32
@@ -137,11 +154,26 @@ extern "C" fn lingua_send_json_to_rust(
 					should be generated on the sending side and are single use"
 				);
 			};
-			api_state.just_received_json.insert(luau_handle, data.ready());
+			match data {
+				JustReceivedJson::AllocatedOnly(str) =>
+					api_state.just_received_json.insert(
+						luau_handle,
+						JustReceivedJson::Ready(str)
+					),
+				JustReceivedJson::Ready(_) => 
+					panic!(
+						"[lingua] luau handle {luau_handle} was already sent - \
+						handles are single use and should only be sent once"
+					)
+			}
+			
 		});
 	}) as u8
 }
 
+/// When data is sent from Rust, this opaque handle is generated to concisely
+/// refer to that data. This handle must always be sent to the Luau side; this
+/// is done by converting it into a `u32` and sending it through an `extern fn`.
 #[repr(transparent)]
 pub struct DataFromRustHandle(u32);
 impl From<DataFromRustHandle> for u32 {
@@ -152,6 +184,9 @@ impl From<DataFromRustHandle> for u32 {
 	}
 }
 
+/// When data is sent from Luau, this opaque handle is generated to concisely
+/// refer to that data. This handle is received across the FFI boundary by
+/// obtaining it through an `extern fn` and converting it from a `u32`.
 #[repr(transparent)]
 pub struct DataFromLuauHandle(u32);
 impl From<u32> for DataFromLuauHandle {
@@ -165,7 +200,13 @@ pub enum SendToLuauError {
 	#[error("error while serializing")]
 	SerdeError(serde_json::Error),
 	#[error("could not convert serialized form to C string")]
-	CStringError
+	CStringError,
+	#[error("the luau side encountered an error at the ffi boundary")]
+	LuauErrorAtFfiBoundaryError,
+	#[error("the luau side is not initialised yet, so cannot handle incoming data")]
+	LuauApiNotReadyError,
+	#[error("the luau side indicated an error, but it's not a known error code")]
+	LuauUnknownError
 }
 
 #[derive(Debug, Error)]
@@ -178,6 +219,8 @@ pub enum ReceiveFromLuauError {
 	AllocatedOnlyError
 }	
 
+/// Sends some data to the Luau side. An opaque `DataFromRustHandle` is
+/// returned; you are always expected to send this handle to the Luau side.
 pub fn send_to_luau<S: Serialize>(
 	data: &S
 ) -> Result<DataFromRustHandle, SendToLuauError> {
@@ -187,9 +230,38 @@ pub fn send_to_luau<S: Serialize>(
 		api_state.next_rust_handle += 1;
 		let len = str.len() as u32;
 		let ptr = str.as_mut_ptr();
-		unsafe {
-			lingua_send_json_to_luau(rust_handle, ptr, len);
+		let status = return_codes::Luau::interpret(unsafe {
+			lingua_send_json_to_luau(rust_handle, ptr, len)
+		});
+		match status {
+			Some(status) => match status {
+				return_codes::Luau::Success => 
+					Ok(DataFromRustHandle(rust_handle)),
+				return_codes::Luau::UncaughtErrorAtFfiBoundary => 
+					Err(SendToLuauError::LuauErrorAtFfiBoundaryError),
+				return_codes::Luau::LuauApiNotReady => 
+					Err(SendToLuauError::LuauApiNotReadyError)
+			},
+			None => Err(SendToLuauError::LuauUnknownError)
 		}
-		Ok(DataFromRustHandle(rust_handle))
+	})
+}
+
+/// Receives some data from the Luau side. You need to generate and send a
+/// `DataFromLuauHandle` yourself from within Luau.
+pub fn receive_from_luau<D: DeserializeOwned>(
+	luau_handle: DataFromLuauHandle
+) -> Result<D, ReceiveFromLuauError> {
+	API_STATE.with_borrow_mut(|api_state: &mut ApiState| {
+		let str = api_state.just_received_json.remove(&luau_handle.0);
+		match str {
+			None => 
+				Err(ReceiveFromLuauError::NoDataError),
+			Some(JustReceivedJson::AllocatedOnly(_)) =>
+				Err(ReceiveFromLuauError::AllocatedOnlyError),
+			Some(JustReceivedJson::Ready(str)) =>
+				serde_json::from_str(&str)
+				.map_err(|e| ReceiveFromLuauError::SerdeError(e))
+		}
 	})
 }

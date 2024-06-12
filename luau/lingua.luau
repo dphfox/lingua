@@ -13,6 +13,16 @@ type table = {
 	[unknown]: unknown
 }
 
+-- When data is sent from Rust, this opaque handle is generated to concisely
+-- refer to that data. This handle is received across the FFI boundary by
+-- obtaining it through an `extern fn` as a `u32`.
+type DataFromRustHandle = u32
+
+-- When data is sent from Luau, this opaque handle is generated to concisely
+-- refer to that data. This handle must always be sent to the Rust side; this is
+-- done by sending it through an `extern fn` as a `u32`.
+type DataFromLuauHandle = u32
+
 -- Passed to Wasynth when initialising a WebAssembly module.
 -- Lingua injects some of its own members into this environment, but otherwise
 -- does not care about the rest of the contents.
@@ -27,12 +37,20 @@ type WasmEnvironment = {
 -- definitions from the Rust side.
 type WasmModule = {
 	func_list: {
+		-- The Luau side calls this function to initiate sending a JSON string. 
+		-- It's called with the handle that it generated and the length of the
+		-- string that it would like to transfer. The Rust side is expected to
+		-- reserve space for the string and return a pointer to this reserved 
+		-- space, with a null pointer representing a failure to allocate space.
 		lingua_send_json_to_rust_alloc: (
-			luau_handle: u32,
+			luau_handle: DataFromLuauHandle,
 			len: u32
 		) -> ptr_mut_u8,
+		-- The Luau side is expected to call this function once it has finished 
+		-- writing to space previously allocated for the transfer of JSON data.
+		-- This signals to the Rust side that it is safe to access the data.
 		lingua_send_json_to_rust: (
-			luau_handle: u32
+			luau_handle: DataFromLuauHandle
 		) -> u8
 	},
 	rt: {
@@ -74,24 +92,22 @@ type ApiState = {
 	-- this handle is incremented and wraps at the 32-bit limit. Handles
 	-- generated on the Luau side may collide with handles generated on the Rust
 	-- side because no synchronisation is done.
-	next_luau_handle: u32
+	next_luau_handle: DataFromLuauHandle
 }
 
 -- The public API surface exposed by Lingua after initialisation.
 -- The API state is expected to be encapsulated as upvalues in closures.
 export type Api = {
-	-- Sends some data to the Rust side. An opaque handle is returned, which
-	-- uniquely identifies this data. This handle can be sent to the Rust side
-	-- separately, and on the Rust side, it can be used to receive the data.
+	-- Sends some data to the Rust side. An opaque `DataFromLuauHandle` is
+	-- returned; you are always expected to send this handle to the Rust side.
 	send_to_rust: (
 		data: table
-	) -> u32,
+	) -> DataFromLuauHandle,
 
-	-- Receives some data from the Rust side. You should have received an opaque
-	-- handle from the Rust side, which uniquely identifies the data that was
-	-- sent. The received data will be decoded into a Luau table.
+	-- Receives some data from the Rust side. You need to generate and send a
+	-- `DataFromRustHandle` yourself from within Rust.
 	receive_from_rust: (
-		rust_handle: u32
+		rust_handle: DataFromRustHandle
 	) -> table
 }
 
@@ -185,7 +201,7 @@ local extern_fn = {}
 -- string is saved without decoding the data or invoking any user callbacks.
 function extern_fn.send_json_to_luau(
 	api_state: ApiState,
-	rust_handle: u32,
+	rust_handle: DataFromRustHandle,
 	ptr: ptr_mut_u8,
 	len: u32
 ): ()
@@ -211,7 +227,7 @@ local api_fn = {}
 function api_fn.send_to_rust(
 	api_state: ApiState,
 	data: table
-): u32
+): DataFromLuauHandle
 	local str = encode_json(data)
 	local luau_handle = api_state.next_luau_handle
 	api_state.next_luau_handle = next_u32(luau_handle)
@@ -243,12 +259,12 @@ end
 -- See the `Api` type for user-facing documentation.
 function api_fn.receive_from_rust(
 	api_state: ApiState,
-	user_handle: u32
+	rust_handle: DataFromRustHandle
 ): table
-	local str = api_state.just_received_json[user_handle]
+	local str = api_state.just_received_json[rust_handle]
 	assert(
 		str ~= nil, 
-		`[lingua] handle {user_handle} has no data - handles should be generated on the sending side and are single use`
+		`[lingua] handle {rust_handle} has no data - handles should be generated on the sending side and are single use`
 	)
 	return decode_json(str)
 end
