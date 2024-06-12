@@ -172,8 +172,8 @@ local extern_fn = {}
 -- The Rust side calls this function when it sends a JSON string. It's called
 -- with the handle that it generated, the pointer to the string, and the length
 -- of that string. To minimise the chance of errors at the FFI boundary, the
--- string is saved without decoding or calling user code.
-function extern_fn.receive_from_extern(
+-- string is saved without decoding the data or invoking any user callbacks.
+function extern_fn.receive_from_rust(
 	api_state: ApiState,
 	rust_handle: u32,
 	ptr: ptr_mut_u8,
