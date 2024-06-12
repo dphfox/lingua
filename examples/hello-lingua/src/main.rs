@@ -48,7 +48,7 @@ fn main() {
 	};
 
 	{
-		let handle = lingua::send_to_luau(rust_greeting).unwrap();
+		let handle = lingua::send_to_luau(&rust_greeting).unwrap();
 		unsafe { respond_to_luau_greeting(handle.into()) };
 	}
 }
