@@ -1,11 +1,3 @@
-[package]
-name = "lingua"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-
-serde = "1.0.203"
-serde_json = "1.0.117"
-thiserror = "1.0.61"
-log = "0.4.21"
+[workspace]
+members = ["rust", "examples/*"]
+resolver = "2"
