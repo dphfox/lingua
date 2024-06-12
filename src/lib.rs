@@ -1,3 +1,5 @@
+#![cfg(target_arch = "wasm32")]
+
 use std::{cell::RefCell, collections::HashMap, num::Wrapping, panic::{catch_unwind, AssertUnwindSafe, UnwindSafe}};
 
 use serde::{de::DeserializeOwned, Serialize};
