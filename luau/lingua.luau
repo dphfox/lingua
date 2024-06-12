@@ -28,11 +28,11 @@ type WasmEnvironment = {
 type WasmModule = {
 	func_list: {
 		lingua_send_json_to_rust_alloc: (
-			user_handle: u32,
+			luau_handle: u32,
 			len: u32
 		) -> ptr_mut_u8,
 		lingua_send_json_to_rust: (
-			user_handle: u32
+			luau_handle: u32
 		) -> u8
 	},
 	rt: {
