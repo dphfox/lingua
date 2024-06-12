@@ -27,11 +27,11 @@ type WasmEnvironment = {
 -- definitions from the Rust side.
 type WasmModule = {
 	func_list: {
-		lingua_send_json_alloc: (
+		lingua_send_json_to_rust_alloc: (
 			user_handle: u32,
 			len: u32
 		) -> ptr_mut_u8,
-		lingua_send_json_invoke: (
+		lingua_send_json_to_rust: (
 			user_handle: u32
 		) -> u8
 	},
@@ -173,7 +173,7 @@ local extern_fn = {}
 -- with the handle that it generated, the pointer to the string, and the length
 -- of that string. To minimise the chance of errors at the FFI boundary, the
 -- string is saved without decoding the data or invoking any user callbacks.
-function extern_fn.receive_from_rust(
+function extern_fn.send_json_to_luau(
 	api_state: ApiState,
 	rust_handle: u32,
 	ptr: ptr_mut_u8,
