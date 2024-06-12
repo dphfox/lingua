@@ -83,14 +83,14 @@ export type Api = {
 	-- Sends some data to the Rust side. An opaque handle is returned, which
 	-- uniquely identifies this data. This handle can be sent to the Rust side
 	-- separately, and on the Rust side, it can be used to receive the data.
-	send: (
+	send_to_rust: (
 		data: table
 	) -> u32,
 
 	-- Receives some data from the Rust side. You should have received an opaque
 	-- handle from the Rust side, which uniquely identifies the data that was
 	-- sent. The received data will be decoded into a Luau table.
-	receive: (
+	receive_from_rust: (
 		rust_handle: u32
 	) -> table
 }
@@ -103,14 +103,24 @@ export type Api = {
 -- FFI call was successful. Note that this has nothing to do with the specific
 -- operation - it's specifically used to communicate low-level failures.
 -- Returned data or operation-specific errors should be sent some other way.
+-- The only exception are memory allocations, which must return a pointer for
+-- pragmatic reasons - in this case, the null pointer represents failure.
 local RETURN_CODES = {
-	-- The FFI call was successfully handled without an unexpected error.
-	SUCCESS = 0,
-	-- A Luau error occurred outside of a protected block in an FFI call.
-	UNCAUGHT_ERROR_AT_FFI_BOUNDARY = 1,
-	-- This FFI call was received before Lingua knew about the module that was
-	-- sending the data.
-	LUAU_API_NOT_READY = 2
+	LUAU = {
+		-- The FFI call was successfully handled without an unexpected error.
+		SUCCESS = 0,
+		-- A Luau error occurred outside of a protected block in an FFI call.
+		UNCAUGHT_ERROR_AT_FFI_BOUNDARY = 1,
+		-- An FFI call was received before Lingua's Luau API knew about the 
+		-- module that was sending the data.
+		LUAU_API_NOT_READY = 2
+	},
+	RUST = {
+		-- The FFI call was successfully handled without panicking.
+		SUCCESS = 0,
+		-- A Rust panic unwound up to the FFI boundary.
+		PANIC_AT_FFI_BOUNDARY = 1
+	}
 }
 
 --------------------------------------------------------------------------------
@@ -158,9 +168,9 @@ local function ffi_error_boundary<Args...>(
 		...
 	)
 	return if ok then 
-		RETURN_CODES.SUCCESS 
+		RETURN_CODES.LUAU.SUCCESS 
 	else 
-		RETURN_CODES.UNCAUGHT_ERROR_AT_FFI_BOUNDARY
+		RETURN_CODES.LUAU.UNCAUGHT_ERROR_AT_FFI_BOUNDARY
 end
 
 --------------------------------------------------------------------------------
@@ -181,7 +191,7 @@ function extern_fn.send_json_to_luau(
 ): ()
 	assert(
 		api_state.just_received_json[rust_handle] == nil, 
-		`[lingua] user handle {rust_handle} is already in use - ensure you're reading all data sent to the luau side`
+		`[lingua] rust handle {rust_handle} is already in use - ensure you're reading all data sent to the luau side`
 	)
 	local str = api_state.module.rt.load.string(
 		api_state.module.memory_list.memory, 
@@ -198,15 +208,15 @@ end
 local api_fn = {}
 
 -- See the `Api` type for user-facing documentation.
-function api_fn.send(
+function api_fn.send_to_rust(
 	api_state: ApiState,
 	data: table
 ): u32
 	local str = encode_json(data)
-	local user_handle = api_state.next_luau_handle
-	api_state.next_luau_handle = next_u32(user_handle)
+	local luau_handle = api_state.next_luau_handle
+	api_state.next_luau_handle = next_u32(luau_handle)
 	local len = string.len(str)
-	local ptr = api_state.module.func_list.lingua_send_json_alloc(user_handle, len)
+	local ptr = api_state.module.func_list.lingua_send_json_to_rust_alloc(luau_handle, len)
 	assert(
 		ptr ~= 0,
 		"[lingua] rust side failed to allocate memory for data to be sent"
@@ -216,11 +226,22 @@ function api_fn.send(
 		ptr,
 		str
 	)
-	return user_handle
+	local status = api_state.module.func_list.lingua_send_json_to_rust(luau_handle)
+	if status ~= RETURN_CODES.RUST.SUCCESS then
+		local codename = "(unknown)"
+		for name, code in pairs(RETURN_CODES.RUST) do
+			if status == code then
+				codename = name
+				break
+			end
+		end
+		error(`[lingua] rust side returned error code {status}: {codename}`)
+	end
+	return luau_handle
 end
 
 -- See the `Api` type for user-facing documentation.
-function api_fn.receive(
+function api_fn.receive_from_rust(
 	api_state: ApiState,
 	user_handle: u32
 ): table
@@ -251,7 +272,7 @@ function lingua.init(
 		env.func_list["lingua_"..fn_name] = function(...)
 			if api_state == nil then
 				print("[lingua] api not initialised yet on luau side - cannot handle incoming data")
-				return RETURN_CODES.LUAU_API_NOT_READY
+				return RETURN_CODES.LUAU.LUAU_API_NOT_READY
 			end
 			return ffi_error_boundary(fn, api_state, ...)
 		end
