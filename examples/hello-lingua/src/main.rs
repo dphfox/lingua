@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
 
-use lingua;
+use lingua_luau;
 
 #[derive(Serialize, Deserialize)]
 struct LuauGreeting {
@@ -36,7 +36,7 @@ fn main() {
 	
 	let luau_greeting: LuauGreeting = {
 		let handle = unsafe { ask_luau_to_say_hello() }.into();
-		lingua::receive_from_luau(handle).unwrap()
+		lingua_luau::receive_from_luau(handle).unwrap()
 	};
 
 	let rust_greeting = RustGreeting {
@@ -45,7 +45,7 @@ fn main() {
 	};
 
 	{
-		let handle = lingua::send_to_luau(data).unwrap();
+		let handle = lingua_luau::send_to_luau(rust_greeting).unwrap();
 		unsafe { respond_to_luau_greeting(handle.into()) };
 	}
 }

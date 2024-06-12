@@ -4,5 +4,5 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-lingua = { path = "../../rust" }
+lingua_luau = { path = "../../rust" }
 serde = { version = "1.0.203", features = ["derive"] }
