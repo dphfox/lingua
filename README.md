@@ -1,8 +1,9 @@
-<img align="right" src="./gh-assets/lingua.svg" alt="Lingua logo">
-<br>
-
-# lingua
+<p align="center">
+<img src="./gh-assets/lingua.svg" alt="Lingua logo">
+</p>
+<h3 align="center">
 Send complex data between Rust and Roblox Luau via Wasynth using JSON.
+</h3>
 
 ## But why‽
 
