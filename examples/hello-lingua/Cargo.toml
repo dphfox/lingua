@@ -2,6 +2,11 @@
 name = "hello-lingua"
 version = "0.1.0"
 edition = "2021"
+publish = false
+
+[[bin]]
+name = "example-wasm"
+path = "src-rust/main.rs"
 
 [dependencies]
 lingua_luau = { path = "../../rust" }

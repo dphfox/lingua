@@ -1,7 +1,7 @@
 -- See src/main.rs for an introduction to this example.
 
-local lingua = require(_G.PATH_TO_LINGUA)
-local example_wasm_loader = require(_G.PATH_TO_WASYNTH_OUTPUT)
+local lingua = require(script.Parent.lingua)
+local example_wasm_loader = require(script.Parent.target_luau.example_wasm)
 
 local wasm_env = {}
 wasm_env.func_list = {}

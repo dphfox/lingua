@@ -16,12 +16,12 @@ type table = {
 -- When data is sent from Rust, this opaque handle is generated to concisely
 -- refer to that data. This handle is received across the FFI boundary by
 -- obtaining it through an `extern fn` as a `u32`.
-type DataFromRustHandle = u32
+export type DataFromRustHandle = u32
 
 -- When data is sent from Luau, this opaque handle is generated to concisely
 -- refer to that data. This handle must always be sent to the Rust side; this is
 -- done by sending it through an `extern fn` as a `u32`.
-type DataFromLuauHandle = u32
+export type DataFromLuauHandle = u32
 
 -- Passed to Wasynth when initialising a WebAssembly module.
 -- Lingua injects some of its own members into this environment, but otherwise
