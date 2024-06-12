@@ -61,7 +61,7 @@ type WasmModule = {
 type WasmMemory = unknown
 
 -- The internal state used by Lingua's Luau-side API.
--- This is not shared between modules.
+-- This is not shared between WASM modules.
 type ApiState = {
 	-- This module provides the low level FFI that the API functions use.
 	module: WasmModule,
