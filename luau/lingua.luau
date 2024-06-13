@@ -303,7 +303,7 @@ function lingua.init(
 			next_luau_handle = 0
 		}
 		local api = {}
-		for fn_name, fn in pairs(api) do
+		for fn_name, fn in pairs(api_fn) do
 			api[fn_name] = function(...)
 				return fn(api_state, ...)
 			end
