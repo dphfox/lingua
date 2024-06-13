@@ -21,7 +21,8 @@ local function get_example_dir(
 end
 
 local function build_single_example(
-	example_name: string
+	example_name: string,
+	_example_type: "lib" | "bin"
 ): ()
 	local working_dir = get_example_dir(example_name)
 	print(`{YELLOW}[Build Example]{RESET} Building example: {BLUE}{example_name}{RESET}`)
@@ -56,7 +57,7 @@ local function build_single_example(
 		local result = process.spawn(
 			"wasm2luau",
 			{
-				"target/wasm32-unknown-unknown/release/example-wasm.wasm"
+				"target/wasm32-unknown-unknown/release/example_wasm.wasm"
 			},
 			{
 				cwd = working_dir
@@ -77,7 +78,7 @@ local function build_single_example(
 		)
 		local ok, result = pcall(
 			fs.writeFile,
-			working_dir .. "/target-luau/example-wasm.luau",
+			working_dir .. "/target-luau/example_wasm.luau",
 			"--!nocheck\n" .. result.stdout
 		)
 		if not ok then

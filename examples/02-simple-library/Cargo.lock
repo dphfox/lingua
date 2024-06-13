@@ -6,7 +6,7 @@ version = 3
 name = "hello-lingua"
 version = "0.1.0"
 dependencies = [
- "lingua_luau",
+ "lingua",
  "serde",
 ]
 
@@ -17,7 +17,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49f1f14873335454500d59611f1cf4a4b0f786f9ac11f4312a78e4cf2566695b"
 
 [[package]]
-name = "lingua_luau"
+name = "lingua"
 version = "0.1.0"
 dependencies = [
  "log",
@@ -84,14 +84,6 @@ checksum = "455182ea6142b14f93f4bc5320a2b31c1f266b66a4a5c858b013302a5d8cbfc3"
 dependencies = [
  "itoa",
  "ryu",
- "serde",
-]
-
-[[package]]
-name = "simple_library"
-version = "0.1.0"
-dependencies = [
- "lingua_luau",
  "serde",
 ]
 

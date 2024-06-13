@@ -1,12 +1,12 @@
 {
-	"name": "Hello Lingua",
+	"name": "Simple Library",
 	"tree": {
 		"$className": "DataModel",
 
 		"ServerScriptService": {
 			"$className": "ServerScriptService",
 
-			"hello_lingua": {
+			"simple_library": {
 				"$className": "Folder",
 
 				"src_luau": {

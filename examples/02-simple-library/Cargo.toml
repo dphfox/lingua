@@ -1,12 +1,13 @@
 [package]
-name = "hello-lingua"
+name = "simple_library"
 version = "0.1.0"
 edition = "2021"
 publish = false
 
-[[bin]]
+[lib]
 name = "example_wasm"
-path = "src-rust/main.rs"
+path = "src-rust/lib.rs"
+crate-type = ["cdylib"]
 
 [dependencies]
 lingua_luau = { path = "../../rust" }
