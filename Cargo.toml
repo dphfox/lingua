@@ -1,6 +1,6 @@
 [workspace]
 members = [
 	"rust", 
-	"examples/hello-lingua"
+	"examples/01-hello-lingua"
 ]
 resolver = "2"

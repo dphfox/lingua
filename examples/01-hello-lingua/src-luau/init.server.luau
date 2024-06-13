@@ -1,3 +1,4 @@
+--!nocheck
 -- See src/main.rs for an introduction to this example.
 
 local lingua = require(script.Parent.lingua)
