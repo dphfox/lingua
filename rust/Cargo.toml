@@ -1,11 +1,16 @@
 [package]
 name = "lingua_luau"
 version = "0.1.0"
+authors = ["Daniel P H Fox <danielphfox@gmail.com>"]
 edition = "2021"
+description = "Send complex data between Rust and Roblox Luau via Wasynth using JSON."
+repository = "https://github.com/dphfox/lingua"
+license = "MIT"
+keywords = ["roblox", "wasm", "wasynth", "lua", "luau"]
+categories = ["wasm", "encoding", "development-tools::ffi"]
 
 [lib]
 name = "lingua"
-
 
 [dependencies]
 serde = "1.0.203"
