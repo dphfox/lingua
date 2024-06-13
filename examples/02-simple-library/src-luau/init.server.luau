@@ -1,5 +1,5 @@
 --!nocheck
--- See src/main.rs for an introduction to this example.
+-- See src/lib.rs for an introduction to this example.
 
 local library = require(script.library)
 
