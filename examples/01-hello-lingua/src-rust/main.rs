@@ -1,3 +1,11 @@
+#[cfg(not(target_arch = "wasm32"))]
+compile_error!("This project must target WebAssembly to compile correctly.");
+
+use lingua::{receive_from_luau, send_to_luau};
+use serde::{Serialize, Deserialize};
+
+mod panic_handler;
+
 // When you include a Rust module in a Luau project with Wasynth, you can't
 // easily send complex data between the two. Extern functions can only send
 // simple numbers.
@@ -11,17 +19,9 @@
 // as your data can be represented neatly as JSON, it'll transfer to the
 // other side just fine.
 
-// -----------------------------------------------------------------------------
-
-#[cfg(not(target_arch = "wasm32"))]
-compile_error!("This project must target WebAssembly to compile correctly.");
-
-use lingua::{receive_from_luau, send_to_luau};
-use serde::{Serialize, Deserialize};
-
 #[derive(Serialize, Deserialize)]
 struct LuauGreeting {
-	greeting_from_lua: String
+	greeting_from_luau: String
 }
 
 #[derive(Serialize)]
@@ -36,6 +36,8 @@ extern "C" {
 }
 
 fn main() {
+	panic_handler::connect();
+	
 	unsafe {
 		let luau_greeting: LuauGreeting = receive_from_luau(
 			ask_luau_to_say_hello().into()
@@ -48,6 +50,6 @@ fn main() {
 
 		respond_to_luau_greeting(
 			send_to_luau(&rust_greeting).unwrap().into()
-		)
+		);
 	}
 }

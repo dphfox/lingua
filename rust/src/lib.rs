@@ -17,6 +17,15 @@ use std::{cell::RefCell, collections::HashMap, num::Wrapping, panic::{catch_unwi
 use serde::{de::DeserializeOwned, Serialize};
 use thiserror::Error;
 
+// Initialises a new string filled with a character that's easy to identify.
+// If data isn't allocated property, the character can be seen, which aids in
+// debugging bugs in memory writing.
+fn new_string_filled(
+	num_bytes: u32
+) -> String {
+	String::from_utf8((0..num_bytes).map(|_| '$' as u8).collect()).unwrap()
+}
+
 /// The return values of Lingua FFI functions are used to indicate whether the
 /// FFI call was successful. Note that this has nothing to do with the specific
 /// operation - it's specifically used to communicate low-level failures.
@@ -128,9 +137,7 @@ extern "C" fn lingua_send_json_to_rust_alloc(
 ) -> *mut u8 {
 	let mut return_ptr = 0 as *mut u8;
 	ffi_panic_boundary(AssertUnwindSafe(|| {
-		// Fill the string with something that's easy to recognise if part of 
-		// the string remains uninitialised.
-		let mut str = String::from_iter((0..len).map(|_| '£'));
+		let mut str = new_string_filled(len);
 		assert!(
 			str.capacity() >= len as usize,
 			"[lingua] sanity check failed: send_json_to_rust_alloc string does \
