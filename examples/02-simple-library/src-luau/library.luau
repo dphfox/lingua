@@ -21,12 +21,7 @@ function library.calculate_fridge_value(
 			lingua_api.send_to_rust(fridge)
 		)
 	)
-	print("Result is", result)
-	if result.ok then
-		return result.value
-	else
-		error(result.err)
-	end
+	return result.Ok or error(result.Err)
 end
 
 return library
