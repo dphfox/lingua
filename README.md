@@ -5,6 +5,12 @@
 Send complex data between Rust and Roblox Luau via Wasynth using JSON.
 </h3>
 
+## Install
+
+```
+cargo add lingua_luau
+```
+
 ## But why‽
 
 The Rust ecosystem contains a lot of valuable tooling for Luau developers. However, for many of us, we're not able to incorporate it into our work, because we're restricted to working inside of sandboxed Luau runtimes.
