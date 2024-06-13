@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-You will need `cargo`, `wasm2luau` and `rojo` installed.
+You will need `lune`, `cargo`, `wasm2luau` and `rojo` installed.
 
 *Tip: `wasm2luau` can be installed with this command:*
 
