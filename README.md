@@ -25,9 +25,10 @@ Lingua provides friendly APIs on both the Rust and Luau side so that end users d
 
 Lingua's ultimate goal is to become obsolete as Rust/Luau interop becomes more complete. An obvious first step would be to replace JSON with a dedicated binary format. Ultimately, it would be good to see proper bindgen tech built out, to minimise the overhead of interfacing between Rust and Luau.
 
-## Contributions and maintenance
+## License
 
-This is [a certified Daniel P H Fox Side Project™](https://fluff.blog/2024/04/10/i-dont-want-to-be-a-maintainer.html), which I am sharing because I personally wanted it to exist in the world. I might maintain it. I might not.
-Contributions are welcome, but I do not make guarantees about those either.
+Licensed the same way as all of my open source projects: BSD 3-Clause + Security Disclaimer.
 
-Feel free to use Lingua, but if you're about to depend on it big time, the security audit's on you. If, for whatever reason, you end up in a spot of bother, you should probably not have used a random project from someone's GitHub without inspecting what it does properly. I take no responsibility for that.
+As with all other projects, you accept responsibility for choosing and using this project.
+
+See [LICENSE.md](./LICENSE.md) or [the license summary](https://github.com/dphfox/licence) for details.
