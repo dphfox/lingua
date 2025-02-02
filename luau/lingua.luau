@@ -1,5 +1,5 @@
 --!strict
---Licensed under MIT from Lingua, (c) Daniel P H Fox 2024
+--Licensed under BSD3 from Lingua, (c) Daniel P H Fox 2024
 
 --------------------------------------------------------------------------------
 -- TYPE DEFINITIONS ------------------------------------------------------------
